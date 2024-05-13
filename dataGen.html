@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html style="display: flex; flex-direction: column; height: 100%;">
+	<head>	
+		<meta lang="en">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width" />
+		<title>Printf random</title>
+		<style>
+			html {
+				background-image: linear-gradient(to bottom right, #dfdced, #bbbbbf);
+			}
+
+			#containter {
+				background-color: white;
+			}
+		</style>
+	</head>
+	<body style="display: flex; flex-direction: column; flex-grow: 1; margin: 0;">
+		<header style="height: 50px; margin: 50px 0;">
+			<h1 style="text-align: center;">Dumb thing I made to generate mysql insert data</h1>
+		</header>
+		<main style="flex-grow: 1; width: 80%; max-width: 1200px; margin: auto;">
+			Input: <input style="width: 500px;" id="format" type="text" name="format">
+			Repeat: <input style="width: 50px;" id="repeat" type="number" name="repeat">
+			<button onclick="generate()">Generate</button>
+			<div id="containter" style="border: 1px black solid; min-height: 300px;"> </div>
+			<button id="config-container-expand" onclick="expandConfig()">Config ▼</button>
+			<div id="config-container" style="max-height: 0px; height: 300px; transition-duration: 1s; border: 0px solid black; overflow: hidden; background-color: white;">
+				\\ : insert backslash<br>
+				\% : insert percentage character<br>
+				\n : break line<br>
+				<br>
+				%d : random digit from 1 to 9<br>
+				%D : random digit from 0 to 9<br>
+				%w : random word<br>
+				More stuff coming soon... I guess.
+			</div>
+
+			<script>
+				let configExpanded = false;
+				let configContainer = document.getElementById("config-container");
+				let configContainerButton = document.getElementById("config-container-expand");
+				function expandConfig() {
+					if (configExpanded) {
+						configContainer.style.maxHeight = '0px';
+						configContainer.style.borderWidth = '0px';
+						configContainerButton.innerHTML = 'Config ▼';
+						configExpanded = false;
+					}
+					else {
+						configContainer.style.maxHeight = '300px';
+						configContainer.style.borderWidth = '1px';
+						configContainerButton.innerHTML = 'Config ▲';
+						configExpanded = true;
+					}
+				}
+
+				function generate() {
+					let Out = '';
+					let format = document.getElementById("format").value;
+					let repeat = document.getElementById("repeat").value;
+					let replaceWords = [];
+
+					if (format.length == 0) {
+						alert("Please enter a format string.");
+						return;
+					}
+
+					if (repeat.length == 0) {
+						alert("Please enter the number of repeat.");
+						return;
+					}
+					let t = format;
+					for (let i = 0; i < repeat - 1; i++) format += t;
+
+					if (format[format.length - 1] === '\\') {
+						alert("Trailing backslash is not allowed.");
+						return;
+					}
+
+					for (let i = 0; i < format.length; i++) {
+						if (format[i] === '\\') {
+							switch(format[i+1]) {
+								case '\\':
+									Out += '\\';
+									break;
+								case 'n':
+									Out += '<br>';
+									break;
+								case '%':
+									Out += '%';
+									break;
+							};
+							i++;
+							continue;
+						}
+
+						if (format[i] === '%') {
+							switch(format[i+1]) {
+								case 'd':
+									Out += Math.floor(Math.random() * 9) + 1;
+									break;
+								case 'D':
+									Out += Math.floor(Math.random() * 10);;
+									break;
+								case 'w':
+									replaceWords.push(Out.length);
+									break;
+							};
+							i++;
+							continue;
+						}
+
+						Out += format[i];
+					};
+
+					if (replaceWords.length > 0) {
+						fetch("https://random-word-api.herokuapp.com/word?number=" + replaceWords.length)
+							.then((res) =>  res.text())
+							.then((text) => {
+								let wordList = JSON.parse(text);
+
+								let sliced = [Out.slice(0, replaceWords[0])];
+								for (let i = 0; i < replaceWords.length - 1; i++) {
+									sliced.push(Out.slice(replaceWords[i], replaceWords[i + 1]));
+									console.log(Out.slice(replaceWords[i], replaceWords[i + 1]));
+								}
+								sliced.push(Out.slice(replaceWords[replaceWords.length - 1], Out.length));
+								console.log(sliced);
+								Out = '';
+
+								console.log(wordList);
+								for (let i = 0; i < sliced.length - 1; i++) {
+									Out += sliced[i] + wordList[i];
+								}
+								Out += sliced[sliced.length - 1];
+
+								//console.log(Out);
+								document.getElementById("containter").innerHTML = Out;
+							})
+					}
+					else {
+						//console.log(Out);
+						document.getElementById("containter").innerHTML = Out;
+					}
+				}
+			</script>
+		</main>
+		<footer style="height: 100px; width: 100%; background-color: #1e4096; display: flex; justify-content: space-evenly;">
+			<span style="color: white;">Credit to <a href="https://random-word-api.herokuapp.com/">https://random-word-api.herokuapp.com/</a> for the random word api.</span>
+			<img src="9e4282e1-cbde-429c-93f9-3bb5454c1a53.jpeg" alt="me when i fucking GET YOU" style="height: 100%;">
+		</footer>
+	</body>
+</html>
